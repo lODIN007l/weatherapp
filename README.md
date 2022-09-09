@@ -2,10 +2,12 @@
 
 Consume a API (weather) vy react and tailwindCSS
 
-##Deploy
+## Deploy
+
 https://weatherapp-black-three.vercel.app/
 
-##Como ejecutar
+## Como ejecutar
+
 1.Ejecutar el comando "npm i" para instalar las dependencias
 2.Ejecutar el comando "npm run dev"
 
