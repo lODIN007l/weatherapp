@@ -28,13 +28,18 @@ const APIkey = "1e9f8f2b050b6ec5f94a079ac0e2acdb";
 function App() {
   const [data, setData] = useState(null);
   const [location, setLocation] = useState("Riobamba");
+  const [loading, setLoading] = useState(false);
+  const [errorMsg, setErrorMsg] = useState("");
   //input
   const [inputValue, setInputValue] = useState("");
+  // animate form
+  const [animate, setAnimate] = useState(false);
 
   // busqueda
 
   const handleInput = (e) => {
     setInputValue(e.target.value);
+    e.preventDefault();
   };
 
   const handleSubmit = (e) => {
@@ -42,8 +47,14 @@ function App() {
     if (inputValue !== "") {
       setLocation(inputValue);
     }
-
     const input = document.querySelector("input");
+    if (input === "") {
+      setAnimate(true);
+      setTimeout(() => {
+        setAnimate(false);
+      }, 1000);
+      // e.preventDefault();
+    }
 
     input.value = "";
 
@@ -52,12 +63,31 @@ function App() {
 
   //fetch de la api
   useEffect(() => {
+    setLoading(true);
     const url = `https://api.openweathermap.org/data/2.5/weather?q=${location}&units=metric&appid=${APIkey}`;
     // console.log(url);
-    axios.get(url).then((res) => {
-      setData(res.data);
-    });
+    axios
+      .get(url)
+      .then((res) => {
+        setTimeout(() => {
+          setData(res.data);
+          setLoading(false);
+        }, 500);
+      })
+      .catch((err) => {
+        setErrorMsg(err);
+        // console.log(err.message);
+        setLoading(false);
+      });
   }, [location]);
+
+  useEffect(() => {
+    // console.log(errorMsg.response.data.message);
+    const timer = setTimeout(() => {
+      setErrorMsg("");
+    }, 1000);
+    return () => clearTimeout(timer);
+  }, [errorMsg]);
 
   if (!data) {
     return (
@@ -101,7 +131,17 @@ function App() {
 
   return (
     <div className="w-full h-screen bg-gradientBg bg-no-repeat bg-cover bg-center flex flex-col items-center justify-center px-4 lg:px-0 ">
-      <form className="h-16 bg-black/30 w-full max-w-[450px] rounded-full backdrop-blur-[32px] mb-8">
+      {errorMsg && (
+        <div className="w-full max-w-[90vw] lg:max-w-[450px] bg-[#ff208c] text-white text-center text-xl absolute top-2 lg:top-10 p-4 capitalize rounded-md ">
+          {`Error: ${errorMsg.response.data.message}`}
+        </div>
+      )}
+
+      <form
+        className={`${
+          animate ? "animate-shake" : "animate-none"
+        }   h-16 bg-black/30 w-full max-w-[450px] rounded-full backdrop-blur-[32px] mb-8`}
+      >
         <div className="h-full relative flex items-center justify-between p-2">
           <input
             onChange={(e) => handleInput(e)}
@@ -120,86 +160,95 @@ function App() {
 
       {/* card */}
       <div className="w-full bg-black/20 max-w-[450px] min-h-[584px] text-white backdrop-blur-[32px] rounded-[32px] py-12 px-6">
-        {/* card top */}
-        <div className="   flex items-center gap-x-5  justify-around rounded-xl">
-          {/* icono */}
-          <div className="text-[87px]">{icon}</div>
-          {/* nombre del pais */}
-          <div className="text-2xl font-semibold ">
-            {data.name},{data.sys.country}
+        {loading ? (
+          <div className="w-full h-full flex justify-center items-center">
+            <ImSpinner8 className="text-white  text-5xl animate-spin" />
           </div>
-          {/* fecha  */}
+        ) : (
           <div>
-            {date.getUTCDate()}/{date.getUTCMonth() + 1}/{date.getUTCFullYear()}
-          </div>
-        </div>
-        {/* card body  */}
-        <div className="my-20 ">
-          <div className="flex justify-center items-center">
-            {/* temperatura */}
-            <div className="text-[144px] leading-none font-light ">
-              {parseInt(data.main.temp)}
-            </div>
-            {/* celsius Icono */}
-            <div className="text-4xl">
-              <TbTemperatureCelsius />
-            </div>
-          </div>
-          {/* descripcion */}
-          <div className="capitalize text-center">
-            {data.weather[0].description}
-          </div>
-        </div>
-
-        {/* card bottom */}
-        <div className="max-w-[378px] mx-auto flex flex-col gap-y-6">
-          <div className="flex justify-between ">
-            <div className="flex items-center gap-x-2">
+            {/* card top */}
+            <div className="   flex items-center gap-x-5  justify-around rounded-xl">
               {/* icono */}
-              <div className=" text-[20px] ">
-                <BsEye />
+              <div className="text-[87px]">{icon}</div>
+              {/* nombre del pais */}
+              <div className="text-2xl font-semibold ">
+                {data.name},{data.sys.country}
               </div>
+              {/* fecha  */}
               <div>
-                Visibility{" "}
-                <span className="ml-2">{data.visibility / 1000} km</span>
+                {date.getUTCDate()}/{date.getUTCMonth() + 1}/
+                {date.getUTCFullYear()}
               </div>
             </div>
-            <div className="flex items-center gap-x-2">
-              {/* icono */}
-              <div className=" text-[20px] ">
-                <BsThermometer />
-              </div>
-              <div className="flex">
-                Feels like{" "}
-                <div className="flex ml-2">
-                  {parseInt(data.main.feels_like)}
+            {/* card body  */}
+            <div className="my-20 ">
+              <div className="flex justify-center items-center">
+                {/* temperatura */}
+                <div className="text-[144px] leading-none font-light ">
+                  {parseInt(data.main.temp)}
+                </div>
+                {/* celsius Icono */}
+                <div className="text-4xl">
                   <TbTemperatureCelsius />
+                </div>
+              </div>
+              {/* descripcion */}
+              <div className="capitalize text-center">
+                {data.weather[0].description}
+              </div>
+            </div>
+
+            {/* card bottom */}
+            <div className="max-w-[378px] mx-auto flex flex-col gap-y-6">
+              <div className="flex justify-between ">
+                <div className="flex items-center gap-x-2">
+                  {/* icono */}
+                  <div className=" text-[20px] ">
+                    <BsEye />
+                  </div>
+                  <div>
+                    Visibility{" "}
+                    <span className="ml-2">{data.visibility / 1000} km</span>
+                  </div>
+                </div>
+                <div className="flex items-center gap-x-2">
+                  {/* icono */}
+                  <div className=" text-[20px] ">
+                    <BsThermometer />
+                  </div>
+                  <div className="flex">
+                    Feels like{" "}
+                    <div className="flex ml-2">
+                      {parseInt(data.main.feels_like)}
+                      <TbTemperatureCelsius />
+                    </div>
+                  </div>
+                </div>
+              </div>
+              {/*  */}
+              <div className="flex justify-between ">
+                <div className="flex items-center gap-x-2">
+                  {/* icono */}
+                  <div className=" text-[20px] ">
+                    <BsWater />
+                  </div>
+                  <div>
+                    Humidity <span className="ml-2">{data.main.humidity} </span>
+                  </div>
+                </div>
+                <div className="flex items-center gap-x-2">
+                  {/* icono */}
+                  <div className=" text-[20px] ">
+                    <BsWind />
+                  </div>
+                  <div>
+                    Wind <span className=" ml-2">{data.wind.speed} m/s</span>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
-          {/*  */}
-          <div className="flex justify-between ">
-            <div className="flex items-center gap-x-2">
-              {/* icono */}
-              <div className=" text-[20px] ">
-                <BsWater />
-              </div>
-              <div>
-                Humidity <span className="ml-2">{data.main.humidity} </span>
-              </div>
-            </div>
-            <div className="flex items-center gap-x-2">
-              {/* icono */}
-              <div className=" text-[20px] ">
-                <BsWind />
-              </div>
-              <div>
-                Wind <span className=" ml-2">{data.wind.speed} m/s</span>
-              </div>
-            </div>
-          </div>
-        </div>
+        )}
       </div>
     </div>
   );
